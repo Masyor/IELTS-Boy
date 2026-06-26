@@ -326,6 +326,25 @@ export default function App() {
     resetChoiceIndexRef.current = resetChoiceIndex;
   }, [resetChoiceIndex]);
 
+  const lastTouchTimeRef = useRef(0);
+  const lastDialogCloseTimeRef = useRef(0);
+
+  useEffect(() => {
+    if (!dialogActive) {
+      lastDialogCloseTimeRef.current = Date.now();
+    }
+  }, [dialogActive]);
+
+  const handleTouchStartWithTime = (callback: () => void) => {
+    lastTouchTimeRef.current = Date.now();
+    callback();
+  };
+
+  const handleMouseDownWithTime = (callback: () => void) => {
+    if (Date.now() - lastTouchTimeRef.current < 350) return;
+    callback();
+  };
+
   // Exactly 8 interactive objects with elegant symmetrical padding to avoid wall-clipping
   const obstacles = useRef<Obstacle[]>([
     { id: "window", label: "Large Window", x: 80, y: 15, w: 40, h: 25 },
@@ -456,7 +475,7 @@ export default function App() {
       ];
 
       const masterVolume = ctx.createGain();
-      masterVolume.gain.setValueAtTime(0.06, ctx.currentTime); // Gentle low baseline volume
+      masterVolume.gain.setValueAtTime(0.18, ctx.currentTime); // Gentle but clearly audible baseline volume
       masterVolume.connect(ctx.destination);
 
       const playTick = () => {
@@ -868,6 +887,10 @@ export default function App() {
     // Otherwise look for interactions
     const activeRange = activeObjectRangeRef.current;
     if (activeRange) {
+      // Prevent immediate dialogue reopen from spamming A button or key bounces
+      if (Date.now() - lastDialogCloseTimeRef.current < 350) {
+        return;
+      }
       playSound("select");
       if (activeRange === "teacher") {
         setDialogTitle("Grumpy Teacher");
@@ -909,6 +932,26 @@ export default function App() {
 
   const touchDirectionEnd = (key: string) => {
     keysPressed.current[key] = false;
+  };
+
+  const touchDiagonalStart = (key1: string, key2: string) => {
+    keysPressed.current[key1] = true;
+    keysPressed.current[key2] = true;
+
+    if (dialogActive && dialogMode === "teacher_question" && !showAnswerInput) {
+      if (key1 === "ArrowUp" || key2 === "ArrowUp" || key1 === "KeyW" || key2 === "KeyW") {
+        playSound("select");
+        setTeacherChoiceIndex(0);
+      } else if (key1 === "ArrowDown" || key2 === "ArrowDown" || key1 === "KeyS" || key2 === "KeyS") {
+        playSound("select");
+        setTeacherChoiceIndex(1);
+      }
+    }
+  };
+
+  const touchDiagonalEnd = (key1: string, key2: string) => {
+    keysPressed.current[key1] = false;
+    keysPressed.current[key2] = false;
   };
 
   // Main Canvas Rendering Loop
@@ -1862,10 +1905,10 @@ export default function App() {
               {/* Tactile Touch Interactivity Areas */}
               {/* UP BUTTON */}
               <button 
-                onMouseDown={() => touchDirectionStart("ArrowUp")}
+                onMouseDown={() => handleMouseDownWithTime(() => touchDirectionStart("ArrowUp"))}
                 onMouseUp={() => touchDirectionEnd("ArrowUp")}
                 onMouseLeave={() => touchDirectionEnd("ArrowUp")}
-                onTouchStart={(e) => { e.preventDefault(); touchDirectionStart("ArrowUp"); }}
+                onTouchStart={(e) => { e.preventDefault(); handleTouchStartWithTime(() => touchDirectionStart("ArrowUp")); }}
                 onTouchEnd={(e) => { e.preventDefault(); touchDirectionEnd("ArrowUp"); }}
                 className="absolute top-1 left-1/2 -translate-x-1/2 w-10 h-10 hover:bg-zinc-700 active:bg-zinc-600 rounded-t-md z-20 transition-all flex flex-col items-center justify-start pt-1"
                 aria-label="D-Pad Up"
@@ -1875,10 +1918,10 @@ export default function App() {
 
               {/* DOWN BUTTON */}
               <button 
-                onMouseDown={() => touchDirectionStart("ArrowDown")}
+                onMouseDown={() => handleMouseDownWithTime(() => touchDirectionStart("ArrowDown"))}
                 onMouseUp={() => touchDirectionEnd("ArrowDown")}
                 onMouseLeave={() => touchDirectionEnd("ArrowDown")}
-                onTouchStart={(e) => { e.preventDefault(); touchDirectionStart("ArrowDown"); }}
+                onTouchStart={(e) => { e.preventDefault(); handleTouchStartWithTime(() => touchDirectionStart("ArrowDown")); }}
                 onTouchEnd={(e) => { e.preventDefault(); touchDirectionEnd("ArrowDown"); }}
                 className="absolute bottom-1 left-1/2 -translate-x-1/2 w-10 h-10 hover:bg-zinc-700 active:bg-zinc-600 rounded-b-md z-20 transition-all flex flex-col items-center justify-end pb-1"
                 aria-label="D-Pad Down"
@@ -1888,10 +1931,10 @@ export default function App() {
 
               {/* LEFT BUTTON */}
               <button 
-                onMouseDown={() => touchDirectionStart("ArrowLeft")}
+                onMouseDown={() => handleMouseDownWithTime(() => touchDirectionStart("ArrowLeft"))}
                 onMouseUp={() => touchDirectionEnd("ArrowLeft")}
                 onMouseLeave={() => touchDirectionEnd("ArrowLeft")}
-                onTouchStart={(e) => { e.preventDefault(); touchDirectionStart("ArrowLeft"); }}
+                onTouchStart={(e) => { e.preventDefault(); handleTouchStartWithTime(() => touchDirectionStart("ArrowLeft")); }}
                 onTouchEnd={(e) => { e.preventDefault(); touchDirectionEnd("ArrowLeft"); }}
                 className="absolute left-1 top-1/2 -translate-y-1/2 w-10 h-10 hover:bg-zinc-700 active:bg-zinc-600 rounded-l-md z-20 transition-all flex items-center justify-start pl-1"
                 aria-label="D-Pad Left"
@@ -1901,16 +1944,65 @@ export default function App() {
 
               {/* RIGHT BUTTON */}
               <button 
-                onMouseDown={() => touchDirectionStart("ArrowRight")}
+                onMouseDown={() => handleMouseDownWithTime(() => touchDirectionStart("ArrowRight"))}
                 onMouseUp={() => touchDirectionEnd("ArrowRight")}
                 onMouseLeave={() => touchDirectionEnd("ArrowRight")}
-                onTouchStart={(e) => { e.preventDefault(); touchDirectionStart("ArrowRight"); }}
+                onTouchStart={(e) => { e.preventDefault(); handleTouchStartWithTime(() => touchDirectionStart("ArrowRight")); }}
                 onTouchEnd={(e) => { e.preventDefault(); touchDirectionEnd("ArrowRight"); }}
                 className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 hover:bg-zinc-700 active:bg-zinc-600 rounded-r-md z-20 transition-all flex items-center justify-end pr-1"
                 aria-label="D-Pad Right"
               >
                 <div className="w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[8px] border-l-zinc-400" />
               </button>
+
+              {/* DIAGONAL TOUCH REGIONS */}
+              {/* DIAGONAL UP-LEFT */}
+              <button 
+                onMouseDown={() => handleMouseDownWithTime(() => touchDiagonalStart("ArrowUp", "ArrowLeft"))}
+                onMouseUp={() => touchDiagonalEnd("ArrowUp", "ArrowLeft")}
+                onMouseLeave={() => touchDiagonalEnd("ArrowUp", "ArrowLeft")}
+                onTouchStart={(e) => { e.preventDefault(); handleTouchStartWithTime(() => touchDiagonalStart("ArrowUp", "ArrowLeft")); }}
+                onTouchEnd={(e) => { e.preventDefault(); touchDiagonalEnd("ArrowUp", "ArrowLeft"); }}
+                className="absolute top-5 left-5 w-8 h-8 rounded-full hover:bg-zinc-800/10 active:bg-zinc-700/30 transition-all flex items-center justify-center z-30 cursor-pointer"
+                aria-label="D-Pad Up-Left"
+                title="Diagonal Up-Left"
+              />
+
+              {/* DIAGONAL UP-RIGHT */}
+              <button 
+                onMouseDown={() => handleMouseDownWithTime(() => touchDiagonalStart("ArrowUp", "ArrowRight"))}
+                onMouseUp={() => touchDiagonalEnd("ArrowUp", "ArrowRight")}
+                onMouseLeave={() => touchDiagonalEnd("ArrowUp", "ArrowRight")}
+                onTouchStart={(e) => { e.preventDefault(); handleTouchStartWithTime(() => touchDiagonalStart("ArrowUp", "ArrowRight")); }}
+                onTouchEnd={(e) => { e.preventDefault(); touchDiagonalEnd("ArrowUp", "ArrowRight"); }}
+                className="absolute top-5 right-5 w-8 h-8 rounded-full hover:bg-zinc-800/10 active:bg-zinc-700/30 transition-all flex items-center justify-center z-30 cursor-pointer"
+                aria-label="D-Pad Up-Right"
+                title="Diagonal Up-Right"
+              />
+
+              {/* DIAGONAL DOWN-LEFT */}
+              <button 
+                onMouseDown={() => handleMouseDownWithTime(() => touchDiagonalStart("ArrowDown", "ArrowLeft"))}
+                onMouseUp={() => touchDiagonalEnd("ArrowDown", "ArrowLeft")}
+                onMouseLeave={() => touchDiagonalEnd("ArrowDown", "ArrowLeft")}
+                onTouchStart={(e) => { e.preventDefault(); handleTouchStartWithTime(() => touchDiagonalStart("ArrowDown", "ArrowLeft")); }}
+                onTouchEnd={(e) => { e.preventDefault(); touchDiagonalEnd("ArrowDown", "ArrowLeft"); }}
+                className="absolute bottom-5 left-5 w-8 h-8 rounded-full hover:bg-zinc-800/10 active:bg-zinc-700/30 transition-all flex items-center justify-center z-30 cursor-pointer"
+                aria-label="D-Pad Down-Left"
+                title="Diagonal Down-Left"
+              />
+
+              {/* DIAGONAL DOWN-RIGHT */}
+              <button 
+                onMouseDown={() => handleMouseDownWithTime(() => touchDiagonalStart("ArrowDown", "ArrowRight"))}
+                onMouseUp={() => touchDiagonalEnd("ArrowDown", "ArrowRight")}
+                onMouseLeave={() => touchDiagonalEnd("ArrowDown", "ArrowRight")}
+                onTouchStart={(e) => { e.preventDefault(); handleTouchStartWithTime(() => touchDiagonalStart("ArrowDown", "ArrowRight")); }}
+                onTouchEnd={(e) => { e.preventDefault(); touchDiagonalEnd("ArrowDown", "ArrowRight"); }}
+                className="absolute bottom-5 right-5 w-8 h-8 rounded-full hover:bg-zinc-800/10 active:bg-zinc-700/30 transition-all flex items-center justify-center z-30 cursor-pointer"
+                aria-label="D-Pad Down-Right"
+                title="Diagonal Down-Right"
+              />
             </div>
           </div>
 
@@ -1924,17 +2016,19 @@ export default function App() {
               {/* BUTTON B */}
               <div className="flex flex-col items-center gap-1">
                 <button
-                  onMouseDown={() => {
+                  onMouseDown={() => handleMouseDownWithTime(() => {
                     // Simulates close/back
                     playSound("select");
                     if (dialogActive) setDialogActive(false);
                     if (showAnswerInput) setShowAnswerInput(false);
-                  }}
+                  })}
                   onTouchStart={(e) => {
                     e.preventDefault();
-                    playSound("select");
-                    if (dialogActive) setDialogActive(false);
-                    if (showAnswerInput) setShowAnswerInput(false);
+                    handleTouchStartWithTime(() => {
+                      playSound("select");
+                      if (dialogActive) setDialogActive(false);
+                      if (showAnswerInput) setShowAnswerInput(false);
+                    });
                   }}
                   className="w-11 h-11 bg-red-800 hover:bg-red-700 active:bg-red-900 border-2 border-red-950 rounded-full flex items-center justify-center text-red-100 font-bold text-lg shadow-md active:translate-y-[2px]"
                   style={{ boxShadow: "2px 4px 0px rgba(0,0,0,0.3)" }}
@@ -1948,10 +2042,10 @@ export default function App() {
               {/* BUTTON A */}
               <div className="flex flex-col items-center gap-1">
                 <button
-                  onMouseDown={() => handleActionPress()}
+                  onMouseDown={() => handleMouseDownWithTime(() => handleActionPress())}
                   onTouchStart={(e) => {
                     e.preventDefault();
-                    handleActionPress();
+                    handleTouchStartWithTime(() => handleActionPress());
                   }}
                   className="w-11 h-11 bg-red-800 hover:bg-red-700 active:bg-red-900 border-2 border-red-950 rounded-full flex items-center justify-center text-red-100 font-bold text-lg shadow-md active:translate-y-[2px]"
                   style={{ boxShadow: "2px 4px 0px rgba(0,0,0,0.3)" }}
