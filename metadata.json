@@ -1,0 +1,6 @@
+{
+  "name": "IELTS Classroom Scavenger Hunt",
+  "description": "A retro GameBoy-style HTML5 canvas adventure game where players search a classroom for IELTS clues to graduate and escape from a grumpy teacher.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

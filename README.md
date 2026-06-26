@@ -1,11 +1,73 @@
-<div align="center">
+# IELTS Retro Classroom Adventure 🎮🏫
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+An interactive, retro GameBoy-styled classroom simulation designed to make learning and practicing IELTS vocabulary and comprehension engaging and fun. Step into the shoes of a student, navigate a beautifully styled pixel-art CRT classroom, and interact with various objects to uncover clues, study materials, and complete exams!
 
-  <h1>Built with AI Studio</h2>
+---
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+## 🎨 Features & Highlights
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+- **Aesthetic CRT Design**: Implements a classic, handheld retro console interface complete with custom-crafted buttons, action triggers, and tactile vibration/sound simulation.
+- **Ambient Web Audio Synth**: Includes an optional, procedural background soundscape that generates relaxing chords and soft melodies to help you focus.
+- **Dynamic IELTS Clue System**: Interactive room items (Trash Can, Computer, Bookshelf, Student Desk, School Lockers, Blackboard, Window, Backpack) change description depending on active quest parameters.
+- **Humorous Filler Text**: Added a procedural random factor that sprinkles easter eggs and jokes when interacting with default items.
+- **Safety First Restart Prompt**: Includes confirmation dialogs to prevent resetting solved progress by accident.
 
-</div>
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+You will need **Node.js** (v18 or higher recommended) and **npm** installed on your system.
+
+### Installation
+
+1. Clone or download your repository:
+   ```bash
+   git clone <your-repository-url>
+   cd <your-repository-name>
+   ```
+
+2. Install the project dependencies:
+   ```bash
+   npm install
+   ```
+
+### Running the Application
+
+To start the Vite development server locally:
+```bash
+npm run dev
+```
+Once started, open [http://localhost:3000](http://localhost:3000) in your web browser.
+
+### Building for Production
+
+To compile and bundle the React and Tailwind assets for production:
+```bash
+npm run build
+```
+The compiled, production-ready static assets will be output to the `dist/` folder.
+
+---
+
+## 🕹️ Controls & Navigation
+
+You can play using either the on-screen tactile GameBoy buttons or your computer keyboard:
+
+- **Move Around**: Use **Arrow Keys** or **W, A, S, D** to walk around the classroom.
+- **Action Button (A)**: Use **Spacebar** or **Enter** (or click the green on-screen **(A)** button) to inspect objects, progress dialogues, submit answers, or confirm resets.
+- **Start / Reset Exam**: Click the **START** button or press on-screen reset to trigger a session reset.
+- **Sound Toggle**: Use the **Volume** icon to enable/disable retro sound effects.
+- **Ambient Music**: Use the **Music Note** icon to toggle the generative synthesizers on/off.
+
+---
+
+## 🛠️ Built With
+
+- **React 19 & TypeScript**: Solid, strongly-typed front-end components.
+- **Vite**: Ultra-fast bundling and local development.
+- **Tailwind CSS**: Modern utility styling.
+- **Motion**: Elegant layout transitions and interface animations.
+- **Lucide Icons**: Clean vector iconography.
+- **Web Audio API**: Real-time generative synthesizer context.
