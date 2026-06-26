@@ -51,6 +51,19 @@ The compiled, production-ready static assets will be output to the `dist/` folde
 
 ---
 
+## 🌐 Deploying to GitHub Pages
+
+This repository includes a pre-configured GitHub Actions deployment workflow (`.github/workflows/deploy.yml`) to build and host your classroom adventure for free on **GitHub Pages**:
+
+1. **Push your code** to your GitHub repository (either `main` or `master` branch).
+2. Go to your repository page on **GitHub**.
+3. Click on the **Settings** tab.
+4. Select **Pages** from the left navigation sidebar.
+5. Under **Build and deployment** -> **Source**, change the dropdown selection from **Deploy from a branch** to **GitHub Actions**.
+6. That's it! GitHub Actions will automatically compile the application and publish your site at `https://<your-username>.github.io/<your-repo-name>/`.
+
+---
+
 ## 🕹️ Controls & Navigation
 
 You can play using either the on-screen tactile GameBoy buttons or your computer keyboard:
