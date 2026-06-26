@@ -235,7 +235,7 @@ export default function App() {
   // Sound/Vibration simulation states
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [musicEnabled, setMusicEnabled] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
+  const [showHelp, setShowHelp] = useState(true);
 
   // Web Audio ambient music synthesizer state and references
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -328,6 +328,12 @@ export default function App() {
 
   const lastTouchTimeRef = useRef(0);
   const lastDialogCloseTimeRef = useRef(0);
+  const lastActionPressTimeRef = useRef(0);
+
+  const closeDialog = () => {
+    setDialogActive(false);
+    lastDialogCloseTimeRef.current = Date.now();
+  };
 
   useEffect(() => {
     if (!dialogActive) {
@@ -475,7 +481,7 @@ export default function App() {
       ];
 
       const masterVolume = ctx.createGain();
-      masterVolume.gain.setValueAtTime(0.18, ctx.currentTime); // Gentle but clearly audible baseline volume
+      masterVolume.gain.setValueAtTime(0.35, ctx.currentTime); // Rich, clear baseline volume
       masterVolume.connect(ctx.destination);
 
       const playTick = () => {
@@ -500,8 +506,8 @@ export default function App() {
 
             // Swell envelope: slow rise, sustain, fade out
             gain.gain.setValueAtTime(0, now);
-            gain.gain.linearRampToValueAtTime(0.04, now + 2);
-            gain.gain.setValueAtTime(0.04, now + 4);
+            gain.gain.linearRampToValueAtTime(0.08, now + 2);
+            gain.gain.setValueAtTime(0.08, now + 4);
             gain.gain.linearRampToValueAtTime(0, now + 6);
 
             osc.connect(filter);
@@ -529,7 +535,7 @@ export default function App() {
 
           // Fast pluck attack, slow bell-like release
           gain.gain.setValueAtTime(0, now);
-          gain.gain.linearRampToValueAtTime(0.1, now + 0.04);
+          gain.gain.linearRampToValueAtTime(0.18, now + 0.04);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 2.4);
 
           osc.connect(filter);
@@ -592,7 +598,7 @@ export default function App() {
     });
 
     configureActiveClues(shuffled, 0);
-    setDialogActive(false);
+    closeDialog();
     setShowAnswerInput(false);
   };
 
@@ -632,8 +638,8 @@ export default function App() {
       }
     });
 
-    // 20% chance of picking one of the default keys to receive a funny text string appropriate to the object
-    if (defaultKeys.length > 0 && Math.random() < 0.20) {
+    // 90% chance of picking one of the default keys to receive a funny text string appropriate to the object
+    if (defaultKeys.length > 0 && Math.random() < 0.90) {
       const chosenDefaultKey = defaultKeys[Math.floor(Math.random() * defaultKeys.length)];
       const choices = funnyStrings[chosenDefaultKey];
       if (choices && choices.length > 0) {
@@ -848,6 +854,12 @@ export default function App() {
 
   // GameBoy on-screen action clicker
   const handleActionPress = () => {
+    const now = Date.now();
+    if (now - lastActionPressTimeRef.current < 200) {
+      return; // Debounce rapid key bounces/touch double triggers
+    }
+    lastActionPressTimeRef.current = now;
+
     // If reset confirmation is active
     if (showResetConfirmRef.current) {
       playSound("select");
@@ -870,7 +882,7 @@ export default function App() {
 
       if (dialogMode === "inspect" || dialogMode === "teacher_shove" || dialogMode === "teacher_correct" || dialogMode === "completed") {
         // Just close the box
-        setDialogActive(false);
+        closeDialog();
       } else if (dialogMode === "teacher_question") {
         if (teacherChoiceIndex === 0) {
           // Open text overlay input
@@ -1669,10 +1681,12 @@ export default function App() {
               />
 
               {/* Stat bar displaying current question number / total */}
-              <div className="absolute top-2 right-2 bg-emerald-950/80 text-emerald-300 font-pixel text-[8px] px-1.5 py-1 rounded border border-emerald-800 flex items-center gap-1.5 z-20 shadow-sm">
-                <span>IELTS:</span>
-                <span className="text-white text-xs">{currentQuestionIndex + 1}/{questionQueue.length}</span>
-              </div>
+              {!dialogActive && !showAnswerInput && (
+                <div className="absolute bottom-2 right-2 bg-emerald-950/80 text-emerald-300 font-pixel text-[8px] px-1.5 py-1 rounded border border-emerald-800 flex items-center gap-1.5 z-20 shadow-sm animate-fade-in">
+                  <span>IELTS:</span>
+                  <span className="text-white text-xs">{currentQuestionIndex + 1}/{questionQueue.length}</span>
+                </div>
+              )}
 
               {/* DIALOG RETRO PANEL (TYPOGRAPHY TYPEWRITER OVERLAY) */}
               {dialogActive && (
@@ -1955,7 +1969,7 @@ export default function App() {
                 <div className="w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[8px] border-l-zinc-400" />
               </button>
 
-              {/* DIAGONAL TOUCH REGIONS */}
+              {/* DIAGONAL TOUCH REGIONS (Tactile corners between the physical cross arms) */}
               {/* DIAGONAL UP-LEFT */}
               <button 
                 onMouseDown={() => handleMouseDownWithTime(() => touchDiagonalStart("ArrowUp", "ArrowLeft"))}
@@ -1963,7 +1977,7 @@ export default function App() {
                 onMouseLeave={() => touchDiagonalEnd("ArrowUp", "ArrowLeft")}
                 onTouchStart={(e) => { e.preventDefault(); handleTouchStartWithTime(() => touchDiagonalStart("ArrowUp", "ArrowLeft")); }}
                 onTouchEnd={(e) => { e.preventDefault(); touchDiagonalEnd("ArrowUp", "ArrowLeft"); }}
-                className="absolute top-5 left-5 w-8 h-8 rounded-full hover:bg-zinc-800/10 active:bg-zinc-700/30 transition-all flex items-center justify-center z-30 cursor-pointer"
+                className="absolute top-1 left-1 w-12 h-12 rounded-lg hover:bg-zinc-800/10 active:bg-zinc-700/30 transition-all flex items-center justify-center z-30 cursor-pointer"
                 aria-label="D-Pad Up-Left"
                 title="Diagonal Up-Left"
               />
@@ -1975,7 +1989,7 @@ export default function App() {
                 onMouseLeave={() => touchDiagonalEnd("ArrowUp", "ArrowRight")}
                 onTouchStart={(e) => { e.preventDefault(); handleTouchStartWithTime(() => touchDiagonalStart("ArrowUp", "ArrowRight")); }}
                 onTouchEnd={(e) => { e.preventDefault(); touchDiagonalEnd("ArrowUp", "ArrowRight"); }}
-                className="absolute top-5 right-5 w-8 h-8 rounded-full hover:bg-zinc-800/10 active:bg-zinc-700/30 transition-all flex items-center justify-center z-30 cursor-pointer"
+                className="absolute top-1 right-1 w-12 h-12 rounded-lg hover:bg-zinc-800/10 active:bg-zinc-700/30 transition-all flex items-center justify-center z-30 cursor-pointer"
                 aria-label="D-Pad Up-Right"
                 title="Diagonal Up-Right"
               />
@@ -1987,7 +2001,7 @@ export default function App() {
                 onMouseLeave={() => touchDiagonalEnd("ArrowDown", "ArrowLeft")}
                 onTouchStart={(e) => { e.preventDefault(); handleTouchStartWithTime(() => touchDiagonalStart("ArrowDown", "ArrowLeft")); }}
                 onTouchEnd={(e) => { e.preventDefault(); touchDiagonalEnd("ArrowDown", "ArrowLeft"); }}
-                className="absolute bottom-5 left-5 w-8 h-8 rounded-full hover:bg-zinc-800/10 active:bg-zinc-700/30 transition-all flex items-center justify-center z-30 cursor-pointer"
+                className="absolute bottom-1 left-1 w-12 h-12 rounded-lg hover:bg-zinc-800/10 active:bg-zinc-700/30 transition-all flex items-center justify-center z-30 cursor-pointer"
                 aria-label="D-Pad Down-Left"
                 title="Diagonal Down-Left"
               />
@@ -1999,7 +2013,7 @@ export default function App() {
                 onMouseLeave={() => touchDiagonalEnd("ArrowDown", "ArrowRight")}
                 onTouchStart={(e) => { e.preventDefault(); handleTouchStartWithTime(() => touchDiagonalStart("ArrowDown", "ArrowRight")); }}
                 onTouchEnd={(e) => { e.preventDefault(); touchDiagonalEnd("ArrowDown", "ArrowRight"); }}
-                className="absolute bottom-5 right-5 w-8 h-8 rounded-full hover:bg-zinc-800/10 active:bg-zinc-700/30 transition-all flex items-center justify-center z-30 cursor-pointer"
+                className="absolute bottom-1 right-1 w-12 h-12 rounded-lg hover:bg-zinc-800/10 active:bg-zinc-700/30 transition-all flex items-center justify-center z-30 cursor-pointer"
                 aria-label="D-Pad Down-Right"
                 title="Diagonal Down-Right"
               />
@@ -2019,14 +2033,14 @@ export default function App() {
                   onMouseDown={() => handleMouseDownWithTime(() => {
                     // Simulates close/back
                     playSound("select");
-                    if (dialogActive) setDialogActive(false);
+                    if (dialogActive) closeDialog();
                     if (showAnswerInput) setShowAnswerInput(false);
                   })}
                   onTouchStart={(e) => {
                     e.preventDefault();
                     handleTouchStartWithTime(() => {
                       playSound("select");
-                      if (dialogActive) setDialogActive(false);
+                      if (dialogActive) closeDialog();
                       if (showAnswerInput) setShowAnswerInput(false);
                     });
                   }}
